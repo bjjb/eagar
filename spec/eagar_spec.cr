@@ -55,7 +55,7 @@ describe Eagar do
       FileUtils.mkdir_p(".x/config.d")
       Eagar.files("x").should eq %w()
       File.open(".x/config.d/foo.ini", "w", &.puts("x = y"))
-      Eagar.files("x").should eq [ tmpdir / ".x/config.d/foo.ini" ]
+      Eagar.files("x").should eq [tmpdir / ".x/config.d/foo.ini"]
       File.open(".x/config.d/bar.json", "w", &.puts(%({"y":"z"})))
       Eagar.files("x").should eq [
         tmpdir / ".x/config.d/bar.json",

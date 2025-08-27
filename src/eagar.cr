@@ -14,7 +14,7 @@ module Eagar
   class_property xdg = Path["~/.config"].expand(home: true)
 
   def self.configuration(name, secondary = "config", extensions = %w(json yaml ini))
-    files(name).reduce({ "" => ({} of String => String) }) do |cfg, path|
+    files(name).reduce({"" => ({} of String => String)}) do |cfg, path|
       cfg.tap do |cfg|
         parse(path).each do |k, v|
           cfg[k] = cfg.fetch(k) { {} of String => String }.merge(v)
@@ -27,7 +27,7 @@ module Eagar
     if %w(.ini .conf).includes?(File.extname(path))
       return INI.parse(File.read(path))
     end
-    { "" => Hash(String, String).from_yaml(File.read(path)) }
+    {"" => Hash(String, String).from_yaml(File.read(path))}
   end
 
   def self.files(name, secondary = "config", extensions = %w(json yaml ini))
