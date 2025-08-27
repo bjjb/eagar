@@ -24,7 +24,7 @@ basis for a configuration.
 ```crystal
 require "eagar"
 File.open(".foo.ini", "w", &.puts(%(bar = baz)))
-Eagar.configuration("foo")[""][bar"] #=> "baz"
+Eagar.configuration("foo")[""]["bar"] #=> "baz"
 ```
 
 ## Development
