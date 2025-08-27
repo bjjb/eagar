@@ -5,18 +5,38 @@ require "json"
 module Eagar
   VERSION = "0.1.0"
 
+  alias YAMLConfig = Hash(String, String | Hash(String, String))
+  alias INIConfig = Hash(String, Hash(String, String))
+
   class_property system = Path["/etc"]
   class_property site = Path["/usr/local/etc"]
   class_property user = Path["~"].expand(home: true)
   class_property xdg = Path["~/.config"].expand(home: true)
 
-  alias Parser = IO -> Hash(String, Hash(String, String))
+  def self.configuration(name, secondary = "config", extensions = %w(json yaml ini))
+    files(name).reduce({ "" => ({} of String => String) }) do |cfg, path|
+      cfg.tap do |cfg|
+        parse(path).each do |k, v|
+          cfg[k] = cfg.fetch(k) { {} of String => String }.merge(v)
+        end
+      end
+    end
+  end
 
-  class_property parsers : Hash(String, Parser) = {
-    "json" => ->(io : IO) { Hash(String, Hash(String, String)).from_json(io) },
-    "yaml" => ->(io : IO) { Hash(String, Hash(String, String)).from_yaml(io) },
-    "ini" => ->(io : IO) { INI.parse(io) },
-  }
+  def self.parse(path) : Hash(String, Hash(String, String))
+    if %w(.ini .conf).includes?(File.extname(path))
+      return INI.parse(File.read(path))
+    end
+    { "" => Hash(String, String).from_yaml(File.read(path)) }
+  end
+
+  def self.files(name, secondary = "config", extensions = %w(json yaml ini))
+    Dir.glob(globs(name, secondary, extensions)).map do |filename|
+      Path[filename]
+    end.select do |path|
+      File.exists?(path) && File::Info.readable?(path)
+    end
+  end
 
   def self.globs(name, secondary = "config", extensions = %w(json yaml ini))
     extglob = "{#{extensions.join(',')}}"
@@ -41,13 +61,5 @@ module Eagar
       cwd / ".config/#{name}/#{secondary}.#{extglob}",
       cwd / ".config/#{name}/#{secondary}.d/*.#{extglob}",
     ]
-  end
-
-  def self.files(name, secondary = "config", extensions = %w(json yaml ini))
-    Dir.glob(globs(name, secondary, extensions)).map do |filename|
-      Path[filename]
-    end.select do |path|
-      File.exists?(path) && File::Info.readable?(path)
-    end
   end
 end
