@@ -75,6 +75,10 @@ describe Eagar do
         tmpdir / ".x/config.d/foo.ini",
         tmpdir / ".config/x/config.d/foo.yaml",
       ]
+      File.open(".x.ini", "w", &.puts("[foo]\nbar=baz"))
+      Eagar.configuration("x").keys.should contain("")
+      Eagar.configuration("x").keys.should contain("foo")
+      Eagar.configuration("x")["foo"]["bar"].should eq "baz"
     end
   ensure
     tmpdir.try { |d| FileUtils.rm_rf(d) }
