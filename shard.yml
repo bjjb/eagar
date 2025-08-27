@@ -1,0 +1,9 @@
+name: eagar
+version: 0.1.0
+
+authors:
+  - JJ Buckley <jj@bjjb.org>
+
+crystal: '>= 1.16.3'
+
+license: MIT

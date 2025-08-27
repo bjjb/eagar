@@ -1,0 +1,6 @@
+{
+	"src/*.cr": { "type": "lib", "alternate": "spec/{}_spec.cr" },
+	"spec/*_spec.cr": { "type": "test", "alternate": "src/{}.cr" },
+	"*": { "make": "crystal spec" }
+}
+
