@@ -35,4 +35,5 @@ cd eagar
 # ... make your changes
 crystal spec
 ```
-- [bjjb](https://bjjb.srht.site) - creator and maintainer
+
+- [bjjb](https://github.com/bjjb) - creator and maintainer
