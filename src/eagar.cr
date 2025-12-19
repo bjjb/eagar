@@ -13,6 +13,14 @@ module Eagar
   class_property user = Path["~"].expand(home: true)
   class_property xdg = Path[ENV.fetch("XDG_CONFIG_HOME", "~/.config")].expand(home: true)
 
+  def self.system_config_dirs : Array(Path)
+    if xdg_dirs = ENV["XDG_CONFIG_DIRS"]?
+      xdg_dirs.split(':').map { |dir| Path[dir] }
+    else
+      [system, site]
+    end
+  end
+
   def self.configuration(name, secondary = "config", extensions = %w(json yaml ini))
     files(name).reduce({"" => ({} of String => String)}) do |cfg, path|
       cfg.tap do |cfg|
@@ -41,25 +49,34 @@ module Eagar
   def self.globs(name, secondary = "config", extensions = %w(json yaml ini))
     extglob = "{#{extensions.join(',')}}"
     cwd = Path["."].expand(home: true)
-    [
-      system / "#{name}.#{extglob}",
-      system / "#{name}/#{secondary}.#{extglob}",
-      system / "#{name}/#{secondary}.d/*.#{extglob}",
-      site / "#{name}.#{extglob}",
-      site / "#{name}/#{secondary}.#{extglob}",
-      site / "#{name}/#{secondary}.d/*.#{extglob}",
-      user / ".#{name}.#{extglob}",
-      user / ".#{name}/#{secondary}.#{extglob}",
-      user / ".#{name}/#{secondary}.d/*.#{extglob}",
-      xdg / "#{name}.#{extglob}",
-      xdg / "#{name}/#{secondary}.#{extglob}",
-      xdg / "#{name}/#{secondary}.d/*.#{extglob}",
-      cwd / ".#{name}.#{extglob}",
-      cwd / ".#{name}/#{secondary}.#{extglob}",
-      cwd / ".#{name}/#{secondary}.d/*.#{extglob}",
-      cwd / ".config/#{name}.#{extglob}",
-      cwd / ".config/#{name}/#{secondary}.#{extglob}",
-      cwd / ".config/#{name}/#{secondary}.d/*.#{extglob}",
-    ]
+
+    result = [] of Path
+
+    # System config directories (respects XDG_CONFIG_DIRS)
+    system_config_dirs.each do |dir|
+      result << dir / "#{name}.#{extglob}"
+      result << dir / "#{name}/#{secondary}.#{extglob}"
+      result << dir / "#{name}/#{secondary}.d/*.#{extglob}"
+    end
+
+    # User home directory
+    result << user / ".#{name}.#{extglob}"
+    result << user / ".#{name}/#{secondary}.#{extglob}"
+    result << user / ".#{name}/#{secondary}.d/*.#{extglob}"
+
+    # XDG config directory (respects XDG_CONFIG_HOME)
+    result << xdg / "#{name}.#{extglob}"
+    result << xdg / "#{name}/#{secondary}.#{extglob}"
+    result << xdg / "#{name}/#{secondary}.d/*.#{extglob}"
+
+    # Current working directory
+    result << cwd / ".#{name}.#{extglob}"
+    result << cwd / ".#{name}/#{secondary}.#{extglob}"
+    result << cwd / ".#{name}/#{secondary}.d/*.#{extglob}"
+    result << cwd / ".config/#{name}.#{extglob}"
+    result << cwd / ".config/#{name}/#{secondary}.#{extglob}"
+    result << cwd / ".config/#{name}/#{secondary}.d/*.#{extglob}"
+
+    result
   end
 end
