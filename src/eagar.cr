@@ -11,7 +11,7 @@ module Eagar
   class_property system = Path["/etc"]
   class_property site = Path["/usr/local/etc"]
   class_property user = Path["~"].expand(home: true)
-  class_property xdg = Path["~/.config"].expand(home: true)
+  class_property xdg = Path[ENV.fetch("XDG_CONFIG_HOME", "~/.config")].expand(home: true)
 
   def self.configuration(name, secondary = "config", extensions = %w(json yaml ini))
     files(name).reduce({"" => ({} of String => String)}) do |cfg, path|

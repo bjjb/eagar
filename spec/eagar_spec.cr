@@ -4,49 +4,51 @@ require "../src/eagar"
 
 describe Eagar do
   it "will look in typical locations for all files" do
-    Eagar.globs("x", "y", %w(json yaml)).should eq %w(
-      /etc/x.{json,yaml}
-      /etc/x/y.{json,yaml}
-      /etc/x/y.d/*.{json,yaml}
-      /usr/local/etc/x.{json,yaml}
-      /usr/local/etc/x/y.{json,yaml}
-      /usr/local/etc/x/y.d/*.{json,yaml}
-      ~/.x.{json,yaml}
-      ~/.x/y.{json,yaml}
-      ~/.x/y.d/*.{json,yaml}
-      ~/.config/x.{json,yaml}
-      ~/.config/x/y.{json,yaml}
-      ~/.config/x/y.d/*.{json,yaml}
-      .x.{json,yaml}
-      .x/y.{json,yaml}
-      .x/y.d/*.{json,yaml}
-      .config/x.{json,yaml}
-      .config/x/y.{json,yaml}
-      .config/x/y.d/*.{json,yaml}
-    ).map { |filename| Path[filename].expand(home: true) }
+    xdg = Eagar.xdg
+    Eagar.globs("x", "y", %w(json yaml)).should eq [
+      Path["/etc/x.{json,yaml}"],
+      Path["/etc/x/y.{json,yaml}"],
+      Path["/etc/x/y.d/*.{json,yaml}"],
+      Path["/usr/local/etc/x.{json,yaml}"],
+      Path["/usr/local/etc/x/y.{json,yaml}"],
+      Path["/usr/local/etc/x/y.d/*.{json,yaml}"],
+      Path["~/.x.{json,yaml}"].expand(home: true),
+      Path["~/.x/y.{json,yaml}"].expand(home: true),
+      Path["~/.x/y.d/*.{json,yaml}"].expand(home: true),
+      xdg / "x.{json,yaml}",
+      xdg / "x/y.{json,yaml}",
+      xdg / "x/y.d/*.{json,yaml}",
+      Path[".x.{json,yaml}"].expand(home: true),
+      Path[".x/y.{json,yaml}"].expand(home: true),
+      Path[".x/y.d/*.{json,yaml}"].expand(home: true),
+      Path[".config/x.{json,yaml}"].expand(home: true),
+      Path[".config/x/y.{json,yaml}"].expand(home: true),
+      Path[".config/x/y.d/*.{json,yaml}"].expand(home: true),
+    ]
   end
 
   it "defaults to using \"config\" for config file base names" do
-    Eagar.globs("x").should eq %w(
-      /etc/x.{json,yaml,ini}
-      /etc/x/config.{json,yaml,ini}
-      /etc/x/config.d/*.{json,yaml,ini}
-      /usr/local/etc/x.{json,yaml,ini}
-      /usr/local/etc/x/config.{json,yaml,ini}
-      /usr/local/etc/x/config.d/*.{json,yaml,ini}
-      ~/.x.{json,yaml,ini}
-      ~/.x/config.{json,yaml,ini}
-      ~/.x/config.d/*.{json,yaml,ini}
-      ~/.config/x.{json,yaml,ini}
-      ~/.config/x/config.{json,yaml,ini}
-      ~/.config/x/config.d/*.{json,yaml,ini}
-      .x.{json,yaml,ini}
-      .x/config.{json,yaml,ini}
-      .x/config.d/*.{json,yaml,ini}
-      .config/x.{json,yaml,ini}
-      .config/x/config.{json,yaml,ini}
-      .config/x/config.d/*.{json,yaml,ini}
-    ).map { |filename| Path[filename].expand(home: true) }
+    xdg = Eagar.xdg
+    Eagar.globs("x").should eq [
+      Path["/etc/x.{json,yaml,ini}"],
+      Path["/etc/x/config.{json,yaml,ini}"],
+      Path["/etc/x/config.d/*.{json,yaml,ini}"],
+      Path["/usr/local/etc/x.{json,yaml,ini}"],
+      Path["/usr/local/etc/x/config.{json,yaml,ini}"],
+      Path["/usr/local/etc/x/config.d/*.{json,yaml,ini}"],
+      Path["~/.x.{json,yaml,ini}"].expand(home: true),
+      Path["~/.x/config.{json,yaml,ini}"].expand(home: true),
+      Path["~/.x/config.d/*.{json,yaml,ini}"].expand(home: true),
+      xdg / "x.{json,yaml,ini}",
+      xdg / "x/config.{json,yaml,ini}",
+      xdg / "x/config.d/*.{json,yaml,ini}",
+      Path[".x.{json,yaml,ini}"].expand(home: true),
+      Path[".x/config.{json,yaml,ini}"].expand(home: true),
+      Path[".x/config.d/*.{json,yaml,ini}"].expand(home: true),
+      Path[".config/x.{json,yaml,ini}"].expand(home: true),
+      Path[".config/x/config.{json,yaml,ini}"].expand(home: true),
+      Path[".config/x/config.d/*.{json,yaml,ini}"].expand(home: true),
+    ]
   end
 
   it "loads configuration from all the files it can find" do
@@ -82,5 +84,18 @@ describe Eagar do
     end
   ensure
     tmpdir.try { |d| FileUtils.rm_rf(d) }
+  end
+
+  it "initializes xdg property from XDG_CONFIG_HOME if set, otherwise uses default" do
+    # Verify that Eagar.xdg respects XDG Base Directory specification
+    # It should use ENV["XDG_CONFIG_HOME"] if set, otherwise default to ~/.config
+
+    if xdg_home = ENV["XDG_CONFIG_HOME"]?
+      # If XDG_CONFIG_HOME is set in environment, Eagar.xdg should use it
+      Eagar.xdg.should eq(Path[xdg_home].expand(home: true))
+    else
+      # If not set, should default to ~/.config
+      Eagar.xdg.should eq(Path["~/.config"].expand(home: true))
+    end
   end
 end
